@@ -5,10 +5,14 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import androidx.room.TypeConverters;
+
 import com.example.rxjavaretrofitdaggerexample.model.StoryResponse;
+import com.example.rxjavaretrofitdaggerexample.utils.StoryResponseConverter;
 
 
 @Database(entities = {StoryResponse.class}, version = 2)
+@TypeConverters({StoryResponseConverter.class})
 public abstract class StoryDatabase extends RoomDatabase {
 
     private static StoryDatabase instance;
