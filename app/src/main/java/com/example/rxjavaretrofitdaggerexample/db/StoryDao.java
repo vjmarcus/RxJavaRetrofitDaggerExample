@@ -26,8 +26,6 @@ public interface StoryDao {
     @Query("SELECT * FROM story_response_table WHERE id = (SELECT MAX(id) FROM story_response_table)")
     Single<StoryResponse> getLastAddedResponse();
 
-    @Query("SELECT * FROM story_response_table")
-    Single<List<StoryResponse>> getListOfResponse();
 
     @Query("SELECT * FROM story_response_table")
     Flowable<List<StoryResponse>> getAll();

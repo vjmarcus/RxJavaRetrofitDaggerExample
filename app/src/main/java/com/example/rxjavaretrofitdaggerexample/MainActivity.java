@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.rxjavaretrofitdaggerexample.db.StoryDao;
@@ -21,10 +23,13 @@ import javax.inject.Inject;
 
 import io.reactivex.Completable;
 import io.reactivex.Observable;
+import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
@@ -35,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
     NewsApi newsApi;
     TextView textView;
     StoryDao storydao;
+    Button button;
+    StoryResponse storyResponse1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,89 +51,55 @@ public class MainActivity extends AppCompatActivity {
 
         StoryDatabase db = StoryDatabase.getInstance(getApplicationContext());
         storydao = db.storyDao();
-
+        button = findViewById(R.id.button);
         textView = findViewById(R.id.textView);
-        getDataFromWeb("software")
-                .subscribeOn(Schedulers.io())
+        getDataFromWeb("software").subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new DisposableObserver<StoryResponse>() {
+                .subscribe(new Observer<StoryResponse>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+
+                    }
 
                     @Override
                     public void onNext(@NonNull StoryResponse storyResponse) {
-                        Log.d(Constants.TAG, "onNext: " + storyResponse.getArticles().get(0).getAuthor());
-                        textView.setText(storyResponse.getArticles().get(0).getAuthor());
-                        insertWithAsyncTask(storyResponse);
-                        insertDb(storyResponse);
-                        StoryResponseConverter storyResponseConverter = new StoryResponseConverter();
-                        String articles = storyResponseConverter.fromStoryResponse(storyResponse.getArticles());
-                        Log.d(Constants.TAG, "onNext: ==="
-                                + articles);
-                        List<Story> stories = storyResponseConverter.fromString(articles);
-                        Log.d(Constants.TAG, "onNext: " + stories.size());
+                        storyResponse1 = storyResponse;
 
+                        insertDb(storyResponse1);
 
                     }
 
                     @Override
                     public void onError(@NonNull Throwable e) {
-                        Log.d(Constants.TAG, "onError: ");
 
                     }
 
                     @Override
                     public void onComplete() {
-                        Log.d(Constants.TAG, "onComplete: ");
-
 
                     }
                 });
 
-        getLastStoryResponseFromDb()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new DisposableSingleObserver<List<StoryResponse>>() {
-                    @Override
-                    public void onSuccess(@NonNull List<StoryResponse> storyResponses) {
-                        Log.d(Constants.TAG, "onSuccess:>>> " + storyResponses.size());
-                    }
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
 
-                    @Override
-                    public void onError(@NonNull Throwable e) {
-
-                    }
-                });
-
-
-    }
-
-    private void insertWithAsyncTask(StoryResponse storyResponse) {
-        new InsertToDbAsyncTask().execute(storyResponse);
-
+            }
+        });
     }
 
     private Observable<StoryResponse> getDataFromWeb(String key) {
-       return  newsApi.getPostsByDate(key, Constants.getCurrentDate(),
-               Constants.getCurrentDate(), 20, "en", Constants.API_KEY);
+        return newsApi.getPostsByDate(key, Constants.getCurrentDate(),
+                Constants.getCurrentDate(), 20, "en", Constants.API_KEY);
     }
 
-    private Completable insertDb(StoryResponse storyResponse) {
+    private void insertDb(StoryResponse storyResponse) {
         Log.d(Constants.TAG, "insertDb: ");
-        return storydao.insert(storyResponse)
-                .subscribeOn(Schedulers.io());
+        storydao.insert(storyResponse).subscribeOn(Schedulers.io()).subscribe();
     }
 
-    private Single<List<StoryResponse>> getLastStoryResponseFromDb() {
-        return storydao.getListOfResponse();
+    private void deleteAll() {
+        Log.d(Constants.TAG, "deleteAll: ");
+        storydao.deleteAll().subscribeOn(Schedulers.io()).subscribe();
     }
-
-    public class InsertToDbAsyncTask extends AsyncTask<StoryResponse, Void, Void> {
-        @Override
-        protected Void doInBackground(StoryResponse... storyResponses) {
-            storydao.insert(storyResponses[0]);
-            Log.d(Constants.TAG, "doInBackground: worked");
-            return null;
-        }
-    }
-
-
 }
