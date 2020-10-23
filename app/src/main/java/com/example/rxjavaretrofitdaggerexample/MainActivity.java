@@ -22,6 +22,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.Single;
@@ -41,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     TextView textView;
     StoryDao storydao;
     Button button;
-    StoryResponse storyResponse1;
+    boolean isFromWeb = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,40 +54,68 @@ public class MainActivity extends AppCompatActivity {
         storydao = db.storyDao();
         button = findViewById(R.id.button);
         textView = findViewById(R.id.textView);
-        getDataFromWeb("software").subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<StoryResponse>() {
-                    @Override
-                    public void onSubscribe(@NonNull Disposable d) {
-
-                    }
-
-                    @Override
-                    public void onNext(@NonNull StoryResponse storyResponse) {
-                        storyResponse1 = storyResponse;
-
-                        insertDb(storyResponse1);
-
-                    }
-
-                    @Override
-                    public void onError(@NonNull Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onComplete() {
-
-                    }
-                });
-
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (isFromWeb) {
+                    getDataFromWeb("software")
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Observer<StoryResponse>() {
+                                @Override
+                                public void onSubscribe(@NonNull Disposable d) {
+                                    Log.d(Constants.TAG, "onSubscribe: ");
+                                }
 
+                                @Override
+                                public void onNext(@NonNull StoryResponse storyResponse) {
+                                    Log.d(Constants.TAG, "onNext: from web size is " + storyResponse.getArticles().size());
+                                    insertDb(storyResponse);
+                                }
+
+                                @Override
+                                public void onError(@NonNull Throwable e) {
+                                    Log.d(Constants.TAG, "onError: ");
+                                }
+
+                                @Override
+                                public void onComplete() {
+                                    Log.d(Constants.TAG, "onComplete: ");
+                                }
+                            });
+                    isFromWeb = false;
+                } else {
+                    getLastStoryResponse()
+                            .toObservable()
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Observer<StoryResponse>() {
+                                @Override
+                                public void onSubscribe(@NonNull Disposable d) {
+                                    Log.d(Constants.TAG, "onSubscribe: ");
+                                }
+
+                                @Override
+                                public void onNext(@NonNull StoryResponse storyResponse) {
+                                    Log.d(Constants.TAG, "onNext from db: size is" + storyResponse.getArticles().size());
+                                }
+
+                                @Override
+                                public void onError(@NonNull Throwable e) {
+                                    Log.d(Constants.TAG, "onError: ");
+                                }
+
+                                @Override
+                                public void onComplete() {
+                                    Log.d(Constants.TAG, "onComplete: ");
+                                }
+                            });
+                    isFromWeb = true;
+                }
             }
         });
     }
+
 
     private Observable<StoryResponse> getDataFromWeb(String key) {
         return newsApi.getPostsByDate(key, Constants.getCurrentDate(),
@@ -94,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void insertDb(StoryResponse storyResponse) {
-        Log.d(Constants.TAG, "insertDb: ");
+        Log.d(Constants.TAG, "insertDb: size = " + storyResponse.getArticles().size());
         storydao.insert(storyResponse).subscribeOn(Schedulers.io()).subscribe();
     }
 
@@ -102,4 +131,10 @@ public class MainActivity extends AppCompatActivity {
         Log.d(Constants.TAG, "deleteAll: ");
         storydao.deleteAll().subscribeOn(Schedulers.io()).subscribe();
     }
+
+    private Flowable<StoryResponse> getLastStoryResponse() {
+        Log.d(Constants.TAG, "getLastStoryResponse: ");
+        return storydao.getLastAddedResponse();
+    }
+
 }

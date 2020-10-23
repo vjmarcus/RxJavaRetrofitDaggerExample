@@ -24,7 +24,7 @@ public interface StoryDao {
     Completable deleteAll();
 
     @Query("SELECT * FROM story_response_table WHERE id = (SELECT MAX(id) FROM story_response_table)")
-    Single<StoryResponse> getLastAddedResponse();
+    Flowable<StoryResponse> getLastAddedResponse();
 
 
     @Query("SELECT * FROM story_response_table")
