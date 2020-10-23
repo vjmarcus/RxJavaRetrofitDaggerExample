@@ -7,11 +7,12 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
+import com.example.rxjavaretrofitdaggerexample.model.Story;
 import com.example.rxjavaretrofitdaggerexample.model.StoryResponse;
 import com.example.rxjavaretrofitdaggerexample.utils.StoryResponseConverter;
 
 
-@Database(entities = {StoryResponse.class}, version = 2)
+@Database(entities = {Story.class}, version = 1)
 @TypeConverters({StoryResponseConverter.class})
 public abstract class StoryDatabase extends RoomDatabase {
 
@@ -20,7 +21,7 @@ public abstract class StoryDatabase extends RoomDatabase {
     public static synchronized StoryDatabase getInstance(Context context){
         if (instance == null) {
             instance = Room.databaseBuilder(context.getApplicationContext(), StoryDatabase.class,
-                    "story_database").fallbackToDestructiveMigration().build();
+                    "story_database").build();
         }
         return instance;
     }

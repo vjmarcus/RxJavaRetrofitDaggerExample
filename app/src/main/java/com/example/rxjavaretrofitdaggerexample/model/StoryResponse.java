@@ -11,13 +11,9 @@ import com.google.gson.annotations.SerializedName;
 import java.io.Serializable;
 import java.util.List;
 
-@Entity(tableName = "story_response_table")
 public class StoryResponse implements Serializable {
-    @PrimaryKey(autoGenerate = true)
     private int id;
-    @SerializedName("articles")
     @Expose
-    @TypeConverters({StoryResponseConverter.class})
     private List<Story> articles;
 
     @Ignore
