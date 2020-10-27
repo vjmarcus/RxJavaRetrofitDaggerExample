@@ -11,6 +11,7 @@ import java.util.List;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
+import io.reactivex.Observable;
 import io.reactivex.Single;
 
 @Dao
@@ -24,7 +25,7 @@ public interface StoryDao {
     Completable deleteAll();
 
     @Query("SELECT * FROM story_response_table WHERE id = (SELECT MAX(id) FROM story_response_table)")
-    Flowable<StoryResponse> getLastAddedResponse();
+    Single<StoryResponse> getLastAddedResponse();
 
 
     @Query("SELECT * FROM story_response_table")
